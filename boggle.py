@@ -11,7 +11,6 @@ def make_grid(width, height):
         for col in range(width)}
         
 
-
 def neighbours_of_position(coords):
     """
     Get neighbours of given position
@@ -61,7 +60,7 @@ def path_to_word(grid, path):
     """
     return ''.join([grid[p] for p in path])
     
-    
+
 def search(grid, dictionary):
     """
     Search through the paths to locate words by matching
@@ -76,6 +75,7 @@ def search(grid, dictionary):
     #       in the grid several times. If we had two letter
     #       A's, how would we know which A it is.
     paths = []
+    full_words, stems = dictionary
     
     # Note the nested function. This cannot be called directly
     # outside of the outer function, only by the outer function
@@ -97,9 +97,17 @@ def search(grid, dictionary):
     # them in a list.
     def do_search(path):
         word = path_to_word(grid, path)
-        if word in dictionary:
+        if word in full_words:
             paths.append(path)
-        for next_pos in neighbours[path[-1]]:
+        # To speed up the algorithm, we ignore the rest of the string
+        # of letters (the path) if our current string (partial string of chars from path)
+        # is not in stems. Example:
+        #           String/word = 'B', the search continues as it is in the stems dictionary
+        #           String/word = 'BA', the search continues as it is in the stems dictionary
+        #           String/word = 'BAX', the search stops as it is NOT in the stems dictionary
+        if word not in stems:
+            return
+        for next_pos in neighbours[path[-1]]: # path[-1] returns the last item
             if next_pos not in path:
                 do_search(path + [next_pos])
                 
@@ -117,24 +125,52 @@ def get_dictionary(dict_file):
     """
     Load dictionary file 
     """
+    full_words, stems = set(), set()
+
     with open(dict_file) as f:
-        return [w.strip().upper() for w in f]
-        
+        for word in f:
+            word = word.strip().upper()
+            full_words.add(word)
+            
+            for i in range(1, len(word)):
+                stems.add(word[:i])
+            
+    #return [w.strip().upper() for w in f] # This returns a set
+    #return {w.strip().upper() for w in f} # This returns a list -- exponentially faster!!
+    
+    return full_words, stems
+
+def display_words(words):
+    for word in words:
+        print(word)
+    
+    print("Found %s words" % len(words))
         
 def main():
     """
     This is the function that will run the whole project 
     """
-    grid = make_grid(3, 3)
+    num_rows = 4
+    num_cols = 4
+    grid_letters = []
+    grid = make_grid(num_cols, num_rows)
+    # Display our grid
+    for r in range(num_rows):
+        for c in range(num_cols):
+            grid_letters.append(grid[(r,c)] + ' ')
+            #print("(%s,%s): %s" % (r,c,grid[(r,c)]))
+            #print('({},{}): {}'.format(r, c, grid[(r,c)])) # Does exactly the same thing as line above
+            #print('({0},{1}): {2}'.format(r, c, grid[(r,c)])) # Does exactly the same thing as line above
+        grid_letters.append('\n')
+    print(''.join(grid_letters))
+    
     dictionary = get_dictionary('words.txt')
     words = search(grid, dictionary)
-    
+
     if len(words) > 0:
-        for word in words:
-            print(word)
-        
-        print("Found %s words" % len(words))
+        display_words(words)
     else:
+        print("No words found. Creating new grid...")
         main()
 
 """
