@@ -119,3 +119,32 @@ def get_dictionary(dict_file):
     """
     with open(dict_file) as f:
         return [w.strip().upper() for w in f]
+        
+        
+def main():
+    """
+    This is the function that will run the whole project 
+    """
+    grid = make_grid(3, 3)
+    dictionary = get_dictionary('words.txt')
+    words = search(grid, dictionary)
+    
+    if len(words) > 0:
+        for word in words:
+            print(word)
+        
+        print("Found %s words" % len(words))
+    else:
+        main()
+
+"""
+Running the code like below causes it to automatically get
+executed when importing in our test file 
+
+main()
+
+Instead, do this:
+"""
+if __name__ == "__main__":
+    main()
+
